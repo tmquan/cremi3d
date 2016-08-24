@@ -81,7 +81,7 @@ def Reading(filename, isTest=False):
 	return imageDataSet
 	
 ###################################################################################	
-def toBlobs(array):
+def membrane(array):
 	shape  = array.shape
 	print shape
 	result = np.zeros(shape, dtype=array.dtype)
@@ -93,24 +93,24 @@ def toBlobs(array):
 	return result
 ###################################################################################
 # def shrink_border(labels):
-def membrane(array):
-	shape  = array.shape
-	print shape
-	result = np.zeros(shape, dtype=array.dtype)
-	array  = np.squeeze(array)
-	# dx    = ndimage.sobel(image, 0)  # horizontal derivative
-	# dy    = ndimage.sobel(image, 1)  # vertical derivative
-	# dz    = ndimage.sobel(image, 2)  # vertical derivative
-	# mag   = np.hypot(dx, dy, dz)  # magnitude
-	result = scipy.ndimage.filters.generic_gradient_magnitude(array,	\
-														   scipy.ndimage.filters.sobel)
+# def membrane(array):
+	# shape  = array.shape
+	# print shape
+	# result = np.zeros(shape, dtype=array.dtype)
+	# array  = np.squeeze(array)
+	# # dx    = ndimage.sobel(image, 0)  # horizontal derivative
+	# # dy    = ndimage.sobel(image, 1)  # vertical derivative
+	# # dz    = ndimage.sobel(image, 2)  # vertical derivative
+	# # mag   = np.hypot(dx, dy, dz)  # magnitude
+	# result = scipy.ndimage.filters.generic_gradient_magnitude(array,	\
+														   # scipy.ndimage.filters.sobel)
 	
-	result[result !=  0] = -1.0
-	result[result ==  0] = 255.0
-	result[result == -1] = 0.0
-	return result
+	# result[result !=  0] = -1.0
+	# result[result ==  0] = 255.0
+	# result[result == -1] = 0.0
+	# return result
 ###################################################################################	
-def WritingNumPyAndTif():
+def WritingImTif():
 	# TrainDir
 	list = ['sample_A_20160501.hdf',
 	        'sample_B_20160501.hdf',
@@ -143,18 +143,42 @@ def WritingNumPyAndTif():
 		print labels.shape
 		
 		## Get the membrain
-		# membrs = membrane(labels)
-		membrs = toBlobs(labels)
+		membrs = membrane(labels)
+		
 		print 'Membrane shape'
 		print membrs.shape
+		
+		
+		
 		
 		skimage.io.imsave(filename + '_image_' +  'radius_' + str(radius) + '.tif', images)
 		skimage.io.imsave(filename + '_label_' +  'radius_' + str(radius) + '.tif', labels)
 		skimage.io.imsave(filename + '_membr_' +  'radius_' + str(radius) + '.tif', membrs)
 		
-		np.save(filename + '_image_' +  'radius_' + str(radius) + '.npy', images)
-		np.save(filename + '_label_' +  'radius_' + str(radius) + '.npy', labels)
-		np.save(filename + '_membr_' +  'radius_' + str(radius) + '.npy', membrs)
+		###################################################################################
+		## Process the 3D images here
+		images_0 = images[radius-1:-radius-1,:,:]
+		images_1 = images[radius+0:-radius+0,:,:]
+		images_2 = images[radius+1:-radius+1,:,:]
+		
+		images_0 = np.expand_dims(images_0, axis = 1)
+		images_1 = np.expand_dims(images_1, axis = 1)
+		images_2 = np.expand_dims(images_2, axis = 1)
+		
+		images   = np.concatenate((images_0, images_1, images_2), axis=1);	
+		
+		## Process the 3D membrs here
+		# Crop the z slice
+		membrs = membrs[radius:-radius,...]
+		# Expand dimension
+		membrs = np.expand_dims(membrs, axis = 1)
+
+		skimage.io.imsave(filename + '_image3d_' +  'radius_' + str(radius) + '.tif', images)
+		skimage.io.imsave(filename + '_membr3d_' +  'radius_' + str(radius) + '.tif', membrs)
+		
+		
+		np.save(filename + '_image3d_' +  'radius_' + str(radius) + '.npy', images)
+		np.save(filename + '_membr3d_' +  'radius_' + str(radius) + '.npy', membrs)
 		
 	###############################################################################
 	# # TestDir
@@ -185,6 +209,6 @@ def WritingNumPyAndTif():
 		# np.save(filename + '_image_' +  'radius_' + str(radius) + '.npy', images)
 ###################################################################################	
 if __name__ == '__main__':
-	WritingNumPyAndTif()
+	WritingImTif()
 	
 ###################################################################################
